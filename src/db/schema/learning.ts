@@ -1,4 +1,4 @@
-import { boolean, index, integer, jsonb, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, jsonb, pgTable, serial, text, uniqueIndex } from 'drizzle-orm/pg-core';
 import { createdAt, pk, ts } from './_shared';
 
 export const CONTRIBUTION_KINDS = [
@@ -68,6 +68,8 @@ export const contributionConsents = pgTable(
   'contribution_consents',
   {
     id: pk('cns'),
+    /** Strict append order (timestamps can tie). */
+    seq: serial('seq').notNull(),
     contributionId: text('contribution_id').notNull(),
     userId: text('user_id').notNull(),
     purpose: text('purpose').$type<ConsentPurpose>().notNull(),
@@ -112,14 +114,21 @@ export const sharedContributions = pgTable(
   (t) => [index('shared_status').on(t.status), index('shared_contrib').on(t.contributionId)],
 );
 
-/** Moderator decisions. internal_note is never exposed outside moderators/admin-with-authorisation. */
+/**
+ * Lifecycle + moderation event log (one row per state change / decision). internal_note is never exposed to authors,
+ * other tenants or shared payloads; authors only ever see reason_public.
+ */
 export const moderationEvents = pgTable(
   'moderation_events',
   {
     id: pk('mod'),
     contributionId: text('contribution_id').notNull(),
     sharedId: text('shared_id'),
+    /** The ACTOR of the event: a moderator, or the author for author-side transitions (see actor_role). */
     moderatorId: text('moderator_id').notNull(),
+    actorRole: text('actor_role').$type<'author' | 'moderator' | 'system'>().notNull().default('moderator'),
+    fromStatus: text('from_status'),
+    toStatus: text('to_status'),
     decision: text('decision').notNull(),
     reasonPublic: text('reason_public'),
     internalNote: text('internal_note'),
@@ -127,6 +136,26 @@ export const moderationEvents = pgTable(
   },
   (t) => [index('modev_contrib').on(t.contributionId)],
 );
+
+/**
+ * The moderator's WORK-IN-PROGRESS shared representation (redaction in progress). Moderator-only. Publishing copies the
+ * reviewed fields into a new shared_contributions row; this table is never exposed to authors or other tenants.
+ */
+export const reviewDrafts = pgTable('review_drafts', {
+  contributionId: text('contribution_id').primaryKey(),
+  claimedBy: text('claimed_by').notNull(),
+  title: text('title').notNull().default(''),
+  summary: text('summary').notNull().default(''),
+  industry: text('industry'),
+  region: text('region'),
+  periodLabel: text('period_label'),
+  evidenceQuality: text('evidence_quality').$type<'unassessed' | 'weak' | 'moderate' | 'strong'>().notNull().default('unassessed'),
+  includeAttribution: boolean('include_attribution').notNull().default(false),
+  redactionNotes: text('redaction_notes'),
+  /** true once a moderator has explicitly saved the form (the pre-filled defaults are NOT a reviewed representation). */
+  reviewed: boolean('reviewed').notNull().default(false),
+  updatedAt: ts('updated_at').defaultNow(),
+});
 
 export const reports = pgTable('reports', {
   id: pk('rep'),

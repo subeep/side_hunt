@@ -1,4 +1,5 @@
-export const isDemoMode = () => process.env.DEMO_MODE === '1';
+/** Demo persona sign-in. On by default outside production; production (e.g. Vercel) must opt in with DEMO_MODE=1. */
+export const isDemoMode = () => (process.env.DEMO_MODE ?? (process.env.NODE_ENV === 'production' ? '0' : '1')) === '1';
 export const isProd = () => process.env.NODE_ENV === 'production';
 export const authSecret = () => {
   const s = process.env.AUTH_SECRET;

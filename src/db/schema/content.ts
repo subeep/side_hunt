@@ -1,4 +1,4 @@
-import { index, integer, jsonb, pgTable, text } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, jsonb, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core';
 import { audienceCols, createdAt, pk, ts } from './_shared';
 
 /** Banners, public pages/perspectives, lab posts, client resources/briefings. Owned by: public site + publisher agent. */
@@ -6,7 +6,7 @@ export const contentItems = pgTable(
   'content_items',
   {
     id: pk('cnt'),
-    kind: text('kind').$type<'banner' | 'page' | 'perspective' | 'lab' | 'resource' | 'briefing'>().notNull(),
+    kind: text('kind').$type<'banner' | 'page' | 'perspective' | 'lab' | 'resource' | 'briefing' | 'release_note'>().notNull(),
     slug: text('slug').notNull(),
     title: text('title').notNull(),
     summary: text('summary'),
@@ -21,7 +21,7 @@ export const contentItems = pgTable(
     createdAt: createdAt(),
     updatedAt: ts('updated_at').defaultNow(),
   },
-  (t) => [index('content_kind_status').on(t.kind, t.status)],
+  (t) => [index('content_kind_status').on(t.kind, t.status), uniqueIndex('content_kind_slug').on(t.kind, t.slug)],
 );
 
 /** Media is stored in the DB and ONLY served through an authorising route handler. Never from /public. */
@@ -36,6 +36,10 @@ export const media = pgTable('media', {
   posterSvg: text('poster_svg'),
   durationSec: integer('duration_sec'),
   transcript: text('transcript'),
+  /** Chapter markers for the player (seconds from start). */
+  chapters: jsonb('chapters').$type<{ t: number; title: string }[]>(),
+  /** Product this media belongs to (public metadata for product pages; NOT an access rule: audience_* is). */
+  productSlug: text('product_slug'),
   status: text('status').$type<'draft' | 'published'>().notNull().default('draft'),
   ...audienceCols(),
   uploadedBy: text('uploaded_by'),
@@ -69,6 +73,9 @@ export const leads = pgTable('leads', {
   role: text('role'),
   message: text('message'),
   interests: jsonb('interests').$type<string[]>(),
+  /** The visitor ticked the 'use these details to respond' consent; marketingOptIn is a SEPARATE optional choice. */
+  consentAt: ts('consent_at'),
+  marketingOptIn: boolean('marketing_opt_in').notNull().default(false),
   status: text('status').$type<'new' | 'contacted' | 'closed'>().notNull().default('new'),
   createdAt: createdAt(),
 });
@@ -86,10 +93,26 @@ export const playgroundRuns = pgTable(
     scenarioSlug: text('scenario_slug').notNull(),
     inputs: jsonb('inputs').$type<Record<string, unknown>>().notNull(),
     output: jsonb('output').$type<Record<string, unknown>>().notNull(),
-    feedback: jsonb('feedback').$type<{ rating?: string; comment?: string }>(),
+    feedback: jsonb('feedback').$type<{ rating?: string; topic?: string; comment?: string }>(),
     createdAt: createdAt(),
   },
   (t) => [index('runs_user').on(t.userId), index('runs_org').on(t.orgId)],
+);
+
+/** Client Sandbox saved scenarios (name + validated synthetic inputs). Isolated by tenant AND owner. */
+export const savedScenarios = pgTable(
+  'saved_scenarios',
+  {
+    id: pk('scn'),
+    orgId: text('org_id').notNull(),
+    userId: text('user_id').notNull(),
+    offeringSlug: text('offering_slug').notNull(),
+    scenarioSlug: text('scenario_slug').notNull(),
+    name: text('name').notNull(),
+    inputs: jsonb('inputs').$type<Record<string, unknown>>().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('saved_scn_owner').on(t.orgId, t.userId)],
 );
 
 /** Employee experiments, hackathon team spaces, release notes, knowledge library. Employees-only by construction. */

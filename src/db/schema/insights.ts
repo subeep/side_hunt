@@ -96,5 +96,24 @@ export const airaQueries = pgTable('aira_queries', {
   createdAt: createdAt(),
 });
 
+/**
+ * Per-user ledger of RELEASED aggregate statistics (differencing guard). Stores the item-id set behind each statistic a
+ * user has been shown, so a later statistic that differs from an earlier one by fewer than MIN_COHORT_ORGS organisations
+ * can be suppressed. Internal only; never serialised.
+ */
+export const statLedger = pgTable(
+  'stat_ledger',
+  {
+    id: pk('stl'),
+    userId: text('user_id').notNull(),
+    setHash: text('set_hash').notNull(),
+    itemIds: jsonb('item_ids').$type<string[]>().notNull(),
+    orgs: integer('orgs').notNull(),
+    items: integer('items').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('stat_ledger_user').on(t.userId, t.createdAt)],
+);
+
 /** Placeholder to keep drizzle from tree-shaking `integer` import in this file. */
 export const _insightsMeta = pgTable('insights_meta', { key: text('key').primaryKey(), n: integer('n') });
