@@ -1,0 +1,19 @@
+import { defineConfig } from 'vitest/config';
+import path from 'node:path';
+
+export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(import.meta.dirname, 'src'),
+      'server-only': path.resolve(import.meta.dirname, 'tests/stubs/server-only.ts'),
+    },
+  },
+  test: {
+    environment: 'node',
+    include: ['tests/**/*.test.ts'],
+    env: { PGLITE_DIR: 'memory://', DEMO_MODE: '1', AUTH_SECRET: 'test-secret-test-secret-test-secret' },
+    testTimeout: 60000,
+    hookTimeout: 120000,
+    pool: 'forks',
+  },
+});
