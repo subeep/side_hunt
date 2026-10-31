@@ -1,7 +1,14 @@
 .network {
   overflow: hidden;
-  pointer-events: none;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
 }
+
+.dragging { cursor: grabbing; }
+.neuron { cursor: pointer; outline: none; }
+.neuron:focus-visible .selection { opacity: 1; stroke-width: 2.5; }
+.neuron > circle:not(:first-child) { pointer-events: none; }
 
 .signal {
   stroke-width: 2;
