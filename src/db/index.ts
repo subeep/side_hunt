@@ -15,6 +15,14 @@ const g = globalThis as unknown as { __azDb?: Db; __azDbReady?: Promise<void> };
 
 async function init(): Promise<Db> {
   const url = process.env.DATABASE_URL;
+  if (url && /neon\.tech/.test(url)) {
+    // Neon over WebSocket (port 443): works on Vercel and from networks that block raw Postgres port 5432.
+    const { Pool, neonConfig } = await import('@neondatabase/serverless');
+    const { drizzle } = await import('drizzle-orm/neon-serverless');
+    neonConfig.webSocketConstructor = (await import('ws')).default as unknown as typeof WebSocket;
+    const pool = new Pool({ connectionString: url.replace(/[&?]channel_binding=[^&]*/, ''), max: 3 });
+    return drizzle(pool, { schema }) as unknown as Db;
+  }
   if (url) {
     const { Pool } = await import('pg');
     const pool = new Pool({ connectionString: url, max: 3, ssl: url.includes('localhost') ? undefined : { rejectUnauthorized: false } });
