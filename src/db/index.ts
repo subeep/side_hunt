@@ -20,7 +20,7 @@ async function init(): Promise<Db> {
     const { Pool, neonConfig } = await import('@neondatabase/serverless');
     const { drizzle } = await import('drizzle-orm/neon-serverless');
     neonConfig.webSocketConstructor = (await import('ws')).default as unknown as typeof WebSocket;
-    const pool = new Pool({ connectionString: url.replace(/[&?]channel_binding=[^&]*/, ''), max: 3 });
+    const pool = new Pool({ connectionString: cleanNeonUrl(url), max: 3 });
     return drizzle(pool, { schema }) as unknown as Db;
   }
   if (url) {
@@ -56,6 +56,12 @@ async function init(): Promise<Db> {
     }
   }
   return db;
+}
+
+function cleanNeonUrl(raw: string): string {
+  const u = new URL(raw);
+  u.searchParams.delete('channel_binding');
+  return u.toString();
 }
 
 async function acquireDirLock(dir: string): Promise<boolean> {
