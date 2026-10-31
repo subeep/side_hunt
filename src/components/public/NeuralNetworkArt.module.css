@@ -1,0 +1,33 @@
+.network {
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.signal {
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 9 91;
+  animation: transmit 3.8s linear infinite;
+}
+
+.halo {
+  opacity: .4;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes transmit {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(.8); opacity: .25; }
+  50% { transform: scale(1.2); opacity: .55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal { animation: none; opacity: 0; }
+  .halo { animation: none; }
+}

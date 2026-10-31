@@ -4,7 +4,8 @@ import { getBannersForPrincipal } from '@/lib/public/content';
 import { listPublicProducts } from '@/lib/public/products';
 import { listShowcase } from '@/lib/public/media';
 import { CAPABILITIES } from '@/lib/public/copy';
-import { CapIcon, HeroArt } from '@/components/public/Art';
+import { CapIcon } from '@/components/public/Art';
+import { NeuralNetworkArt } from '@/components/public/NeuralNetworkArt';
 import { BannerStrip, MediaCard, ProductCard, SectionHead } from '@/components/public/Blocks';
 
 export default async function Home() {
@@ -31,7 +32,7 @@ export default async function Home() {
             <Link href="/learn/aira" className="btn btn-secondary">Ask AIRA</Link>
           </div>
         </div>
-        <HeroArt className="mx-auto h-auto w-full max-w-lg" />
+        <NeuralNetworkArt className="mx-auto h-auto w-full max-w-lg" />
       </section>
 
       <section aria-labelledby="what">
