@@ -15,9 +15,15 @@ export async function POST(req: Request) {
   const token = process.env.SETUP_TOKEN;
   const given = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
   if (!token || token.length < 16 || !safeEqual(given, token)) return new NextResponse('Not found', { status: 404 });
+  try {
   const res = (await db.execute(sql`select count(*)::int as n from information_schema.tables where table_schema = 'public' and table_name = 'organisations'`)) as unknown as { rows: { n: number }[] };
   const existed = Number(res.rows[0]?.n) > 0;
   if (!existed) await applySchema(db);
   await seedAll(db);
   return NextResponse.json({ ok: true, schemaCreated: !existed, seeded: true });
+  } catch (err) {
+    // Only reachable with a valid setup token, so returning the message is safe and makes setup debuggable.
+    const e = err as Error & { cause?: Error };
+    return NextResponse.json({ ok: false, error: e.message, cause: e.cause?.message, hasDatabaseUrl: !!process.env.DATABASE_URL }, { status: 500 });
+  }
 }
