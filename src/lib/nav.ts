@@ -10,18 +10,16 @@ export function navFor(p: Principal | null): NavLink[] {
   if (!p) {
     return [
       { href: '/products', label: 'Products' },
-      { href: '/media', label: 'Media' },
-      { href: '/perspectives', label: 'Perspectives' },
-      { href: '/hackathon/register', label: 'Hackathon' },
+      { href: '/media', label: 'Demos' },
       { href: '/connect', label: 'Contact' },
     ];
   }
-  const links: NavLink[] = [{ href: '/products', label: 'Products' }, { href: '/media', label: 'Media' }];
+  const links: NavLink[] = [{ href: '/products', label: 'Products' }, { href: '/media', label: 'Demos' }];
   if (p.isEmployee) {
-    links.push({ href: '/employee', label: 'Employee' }, { href: '/learn', label: 'Learning' });
+    links.push({ href: '/employee', label: 'Employee' }, { href: '/learn', label: 'AI Insights' });
   }
   if (p.memberships.some((m) => m.orgKind === 'client')) {
-    links.push({ href: '/client', label: 'Workspace' }, { href: '/learn', label: 'Learning' });
+    links.push({ href: '/client', label: 'Workspace' }, { href: '/learn', label: 'AI Insights' });
   }
   if (p.grants.has('learning_moderator')) links.push({ href: '/moderation', label: 'Moderation' });
   if (p.grants.has('content_publisher') || p.grants.has('video_publisher')) links.push({ href: '/publisher', label: 'Publisher' });

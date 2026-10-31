@@ -11,6 +11,7 @@ import { audit } from '../audit';
 import { requestLoginCode, safeNext, verifyLoginCode } from './login';
 import { createSession, destroySession, getPrincipal, setSessionActiveOrg } from './session';
 import { buildPrincipal } from './principal';
+import { verifyTestPassword } from './testlogin';
 
 export interface LoginState {
   step: 'email' | 'code';
@@ -36,6 +37,15 @@ export async function requestCodeAction(_prev: LoginState, form: FormData): Prom
   const ip = clientIp(await headers());
   const { demoCode } = await requestLoginCode(parsed.data, ip);
   return { step: 'code', email: parsed.data.toLowerCase(), message: 'If that address is eligible for access, a one-time code has been sent. It expires in 10 minutes.', demoCode };
+}
+
+export async function passwordLoginAction(_prev: { error?: string }, form: FormData): Promise<{ error?: string }> {
+  const parsed = z.object({ email: z.string().email().max(200), password: z.string().min(1).max(200) }).safeParse({ email: form.get('email'), password: form.get('password') });
+  if (!parsed.success) return { error: 'Enter your email and password.' };
+  const userId = await verifyTestPassword(parsed.data.email, parsed.data.password, clientIp(await headers()));
+  if (!userId) return { error: 'Email or password is incorrect.' };
+  await createSession(userId);
+  redirect(safeNext(form.get('next')) ?? (await landingPath(userId)));
 }
 
 export async function verifyCodeAction(prev: LoginState, form: FormData): Promise<LoginState> {

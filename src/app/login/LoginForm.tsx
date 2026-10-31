@@ -1,8 +1,35 @@
 'use client';
 import { useActionState } from 'react';
-import { requestCodeAction, verifyCodeAction, type LoginState } from '@/lib/auth/actions';
+import { useState } from 'react';
+import { passwordLoginAction, requestCodeAction, verifyCodeAction, type LoginState } from '@/lib/auth/actions';
 import { SubmitButton } from '@/components/ui/SubmitButton';
 import { Alert, Field } from '@/components/ui';
+
+export function PasswordForm({ next, accounts }: { next?: string; accounts: readonly { email: string; label: string }[] }) {
+  const [state, action] = useActionState<{ error?: string }, FormData>(passwordLoginAction, {});
+  const [email, setEmail] = useState('');
+  return (
+    <form action={action} className="space-y-4">
+      {state.error && <Alert tone="danger">{state.error}</Alert>}
+      {next && <input type="hidden" name="next" value={next} />}
+      <Field label="Email" htmlFor="pw-email">
+        <input id="pw-email" name="email" type="email" required autoComplete="username" className="input" value={email} onChange={(e) => setEmail(e.target.value)} />
+      </Field>
+      <Field label="Password" htmlFor="pw-password">
+        <input id="pw-password" name="password" type="password" required autoComplete="current-password" className="input" />
+      </Field>
+      <SubmitButton pendingText="Signing in…">Sign in</SubmitButton>
+      <div className="rounded-lg bg-brown-50 p-3 text-sm text-brown-800">
+        <p className="font-medium">Test accounts (password: <code className="font-mono">Azentio@2026</code>)</p>
+        <ul className="mt-1 space-y-1">
+          {accounts.map((a) => (
+            <li key={a.email}><button type="button" className="text-left underline" onClick={() => setEmail(a.email)}>{a.email}</button> <span className="text-muted">{a.label}</span></li>
+          ))}
+        </ul>
+      </div>
+    </form>
+  );
+}
 
 export function LoginForm({ next }: { next?: string }) {
   const [req, requestAction] = useActionState<LoginState, FormData>(requestCodeAction, { step: 'email' });
