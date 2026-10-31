@@ -20,7 +20,7 @@ async function init(): Promise<Db> {
     const pool = new Pool({ connectionString: url, max: 3, ssl: url.includes('localhost') ? undefined : { rejectUnauthorized: false } });
     return drizzlePg(pool, { schema }) as unknown as Db;
   }
-  if (process.env.VERCEL) {
+  if (process.env.VERCEL && process.env.NEXT_PHASE !== 'phase-production-build') {
     throw new Error('DATABASE_URL is not set. Add a Postgres database (e.g. Neon via the Vercel Marketplace) and run `npm run db:push && npm run db:seed`.');
   }
   const { PGlite } = await import('@electric-sql/pglite');
